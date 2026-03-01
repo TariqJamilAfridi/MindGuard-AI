@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MindGuard — Your AI Mood Companion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+
+<!-- ═══ MOOD ANIMATION CANVAS (full-screen, behind everything) ═══ -->
+<canvas id="moodCanvas"></canvas>
+
+<!-- ═══ MOBILE HAMBURGER ═══ -->
+<button class="hamburger" id="hamburger" onclick="toggleSidebar()">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- ════════════════════════════════════════
+     REGISTRATION NUDGE BANNER
+════════════════════════════════════════ -->
+<div class="nudge-banner" id="nudgeBanner" style="display:none">
+  <div class="nudge-content">
+    <span class="nudge-icon">✨</span>
+    <div class="nudge-text">
+      <strong>Save your journey.</strong>
+      Register free to keep your entries, track streaks & get weekly insights by email.
+    </div>
+    <button class="nudge-btn" onclick="openModal('register')">Join Free</button>
+    <button class="nudge-close" onclick="dismissNudge()">✕</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-orb-spin"></div>
+    <div>
+      <div class="brand-name">MindGuard</div>
+      <div class="brand-tagline">Your quiet corner</div>
+    </div>
+  </div>
+
+  <!-- User pill -->
+  <div class="user-pill" id="userPill" style="display:none">
+    <div class="user-avatar" id="userAvatar">?</div>
+    <div class="user-info">
+      <div class="user-name" id="userName">—</div>
+      <div class="user-email" id="userEmail">—</div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()" title="Sign out">↩</button>
+  </div>
+
+  <div class="auth-btns" id="authBtns">
+    <button class="btn-auth-outline" onclick="openModal('login')">Sign In</button>
+    <button class="btn-auth-fill"    onclick="openModal('register')">Register</button>
+  </div>
+
+  <nav class="nav">
+    <a class="nav-link active" data-section="journal" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4z"/></svg>
+      <span>Journal</span>
+    </a>
+    <a class="nav-link" data-section="dashboard" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Dashboard</span>
+    </a>
+    <a class="nav-link" data-section="history" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>History</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-bottom">
+    <div class="streak-widget">
+      <div class="streak-flame">🔥</div>
+      <div class="streak-info">
+        <div class="streak-number" id="streakCount">0</div>
+        <div class="streak-label">Day Streak</div>
+      </div>
+    </div>
+    <p class="sidebar-disclaimer">Not a substitute for professional mental health support.</p>
+  </div>
+</aside>
+
+<!-- ════════════════════════════════════════
+     MAIN
+════════════════════════════════════════ -->
+<main class="main">
+
+  <!-- ─── JOURNAL ─────────────────────── -->
+  <section id="section-journal" class="page active">
+    <header class="page-header">
+      <div class="header-text">
+        <p class="header-greeting" id="greetingText"></p>
+        <h1 class="header-title">How are you feeling <em>today?</em></h1>
+      </div>
+      <div class="header-date" id="headerDate"></div>
+    </header>
+
+    <!-- Mood orb -->
+    <div class="orb-container">
+      <div class="orb" id="moodOrb">
+        <div class="orb-inner">
+          <span class="orb-emoji" id="orbEmoji">✦</span>
+          <span class="orb-label" id="orbLabel">Ready</span>
+        </div>
+      </div>
+      <div class="orb-rings">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+      </div>
+    </div>
+
+    <!-- Journal card -->
+    <div class="card journal-card">
+      <div class="card-top">
+        <label class="card-label">Today's Entry</label>
+        <span class="char-badge"><span id="charCount">0</span> chars</span>
+      </div>
+
+      <div class="textarea-wrap">
+        <textarea id="journalInput" class="journal-textarea"
+          placeholder="Start writing… What's on your mind? How did today feel?"
+          rows="7"></textarea>
+        <button class="mic-btn" id="micBtn" onclick="toggleVoice()" title="Speak your entry">
+          <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+          </svg>
+          <span class="mic-pulse" id="micPulse"></span>
+        </button>
+      </div>
+
+      <div class="voice-status" id="voiceStatus" style="display:none">
+        <div class="voice-wave">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <span id="voiceStatusText">Listening… speak your entry</span>
+        <button class="voice-stop-btn" onclick="stopVoice()">Stop</button>
+      </div>
+
+      <div class="emoji-strip">
+        <span class="emoji-strip-label">Quick mood:</span>
+        <button class="emj" data-mood="1">😞</button>
+        <button class="emj" data-mood="2">😕</button>
+        <button class="emj" data-mood="3">😐</button>
+        <button class="emj" data-mood="4">🙂</button>
+        <button class="emj" data-mood="5">😄</button>
+      </div>
+
+      <button class="analyse-btn" onclick="submitEntry()">
+        <span>Analyse My Entry</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+
+    <!-- Result card -->
+    <div class="result-card" id="resultCard" style="display:none">
+      <div class="result-top">
+        <div class="sentiment-pill" id="sentimentPill"></div>
+        <div class="score-track"><div class="score-bar" id="scoreBar"></div></div>
+        <span class="score-value" id="scoreValue"></span>
+      </div>
+      <div class="emotions-wrap" id="emotionsWrap"></div>
+      <blockquote class="response-quote" id="responseQuote"></blockquote>
+      <div class="tip-block" id="tipBlock"></div>
+      <p class="result-disclaimer">⚕️ MindGuard is a personal wellness companion, not a clinical tool. If you're struggling, please reach out to a licensed mental health professional.</p>
+    </div>
+  </section>
+
+  <!-- ─── DASHBOARD ───────────────────── -->
+  <section id="section-dashboard" class="page">
+    <header class="page-header">
+      <div class="header-text">
+        <p class="header-greeting">Your patterns, made visible</p>
+        <h1 class="header-title">Mood <em>Dashboard</em></h1>
+      </div>
+      <div class="range-toggle">
+        <button class="rtbtn active" onclick="loadMoodChart(7,this)">7d</button>
+        <button class="rtbtn" onclick="loadMoodChart(30,this)">30d</button>
+      </div>
+    </header>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-value" id="statTotal">–</div><div class="stat-label">Total Entries</div></div>
+      <div class="stat-card"><div class="stat-value positive" id="statPositive">–</div><div class="stat-label">Positive Days</div></div>
+      <div class="stat-card"><div class="stat-value negative" id="statNegative">–</div><div class="stat-label">Challenging Days</div></div>
+      <div class="stat-card"><div class="stat-value accent" id="statStreak">–</div><div class="stat-label">Current Streak</div></div>
+    </div>
+
+    <div class="alert-card" id="alertCard" style="display:none">
+      <div class="alert-icon">⚠️</div>
+      <div><strong>Heads up.</strong> Your mood has been trending lower the last few days. That's okay — but you deserve support. You don't have to carry this alone.</div>
+    </div>
+
+    <div class="charts-layout">
+      <div class="chart-card span2">
+        <div class="chart-header">
+          <h3>Mood Trend</h3>
+          <div class="chart-legend">
+            <span class="leg pos">Positive</span>
+            <span class="leg neu">Neutral</span>
+            <span class="leg neg">Negative</span>
+          </div>
+        </div>
+        <canvas id="moodChart" height="110"></canvas>
+      </div>
+      <div class="chart-card"><h3>Emotion Frequency</h3><canvas id="emotionChart" height="200"></canvas></div>
+      <div class="chart-card"><h3>Sentiment Split</h3><canvas id="sentimentChart" height="200"></canvas></div>
+    </div>
+
+    <div class="insight-card" id="insightCard" style="display:none">
+      <div class="insight-icon">✨</div>
+      <div><h3>Weekly Insight</h3><p id="insightText"></p></div>
+    </div>
+  </section>
+
+  <!-- ─── HISTORY ──────────────────────── -->
+  <section id="section-history" class="page">
+    <header class="page-header">
+      <div class="header-text">
+        <p class="header-greeting">Every entry is a step forward</p>
+        <h1 class="header-title">Journal <em>History</em></h1>
+      </div>
+    </header>
+    <div class="history-toolbar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="searchBox" class="search-input" placeholder="Search entries, emotions…" oninput="filterHistory()"/>
+      </div>
+      <button class="export-btn" onclick="exportCSV()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+    </div>
+    <div id="historyList" class="history-list">
+      <div class="empty-state"><div class="empty-icon">📖</div><p>Loading entries…</p></div>
+    </div>
+  </section>
+</main>
+
+<!-- ════════════════════════════════════════
+     REGISTER MODAL
+════════════════════════════════════════ -->
+<div class="modal-backdrop" id="modalBackdrop" onclick="closeModal()"></div>
+
+<div class="modal" id="registerModal">
+  <button class="modal-close" onclick="closeModal()">✕</button>
+  <div class="modal-logo">
+    <div class="modal-orb"></div>
+    <span>MindGuard</span>
+  </div>
+  <h2 class="modal-title">Save your journey</h2>
+  <p class="modal-sub">Register free to keep your entries, unlock streak tracking, and receive weekly mood insights by email.</p>
+  <div class="form-group">
+    <label>Your Name</label>
+    <input type="text" id="regName" placeholder="e.g. Sarah" class="form-input"/>
+  </div>
+  <div class="form-group">
+    <label>Email Address</label>
+    <input type="email" id="regEmail" placeholder="you@example.com" class="form-input"/>
+  </div>
+  <div class="form-group">
+    <label>Password <span class="label-hint">(min 6 chars)</span></label>
+    <input type="password" id="regPassword" placeholder="••••••••" class="form-input"/>
+  </div>
+  <div class="form-error" id="regError"></div>
+  <button class="modal-submit" onclick="doRegister()">Create My Account →</button>
+  <p class="modal-switch">Already have an account? <a href="#" onclick="openModal('login')">Sign in</a></p>
+</div>
+
+<!-- ════════════════════════════════════════
+     LOGIN MODAL
+════════════════════════════════════════ -->
+<div class="modal" id="loginModal">
+  <button class="modal-close" onclick="closeModal()">✕</button>
+  <div class="modal-logo">
+    <div class="modal-orb"></div>
+    <span>MindGuard</span>
+  </div>
+  <h2 class="modal-title">Welcome back</h2>
+  <p class="modal-sub">Sign in to access your journal history and continue your streak.</p>
+  <div class="form-group">
+    <label>Email Address</label>
+    <input type="email" id="loginEmail" placeholder="you@example.com" class="form-input"/>
+  </div>
+  <div class="form-group">
+    <label>Password</label>
+    <input type="password" id="loginPassword" placeholder="••••••••" class="form-input"/>
+  </div>
+  <div class="form-error" id="loginError"></div>
+  <button class="modal-submit" onclick="doLogin()">Sign In →</button>
+  <p class="modal-switch">No account yet? <a href="#" onclick="openModal('register')">Register free</a></p>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay" style="display:none">
+  <div class="loader-orb"></div>
+  <p>Reading your words…</p>
+</div>
+
+<script src="/static/script.js"></script>
+</body>
+</html>
