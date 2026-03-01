@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MindGuard — Admin Panel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --ink:#080b0e; --ink2:#0f1317; --ink3:#171c21; --ink4:#1e252c;
+      --border:rgba(255,255,255,0.06); --border2:rgba(255,255,255,0.11);
+      --text:#e9e4dc; --text2:#a09890; --text3:#5a5550;
+      --gold:#c9a96e; --gold2:#e8c98a; --gold-dim:rgba(201,169,110,0.13);
+      --sage:#82b09a; --sage-dim:rgba(130,176,154,0.13);
+      --terra:#c97a62; --terra-dim:rgba(201,122,98,0.13);
+      --blue:#7a9ec9; --blue-dim:rgba(122,158,201,0.13);
+      --sidebar:220px;
+      --font-d:'Cormorant Garamond',Georgia,serif;
+      --font-b:'Outfit',system-ui,sans-serif;
+      --r:12px; --r-sm:8px;
+      --shadow:0 8px 32px rgba(0,0,0,0.4);
+      --trans:0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{font-size:16px;}
+    body{font-family:var(--font-b);background:var(--ink);color:var(--text);display:flex;min-height:100vh;overflow-x:hidden;}
+    ::-webkit-scrollbar{width:5px;}
+    ::-webkit-scrollbar-thumb{background:var(--ink4);border-radius:3px;}
+    a{text-decoration:none;color:inherit;}
+    button{cursor:pointer;font-family:var(--font-b);}
+
+    /* ── Sidebar ─────────────────────────────────── */
+    .sidebar{
+      width:var(--sidebar); min-height:100vh;
+      background:var(--ink2); border-right:1px solid var(--border);
+      display:flex; flex-direction:column;
+      padding:24px 16px; position:fixed;
+      top:0; left:0; bottom:0; z-index:100;
+    }
+    .sb-brand{
+      display:flex; align-items:center; gap:11px;
+      padding:0 6px 24px; border-bottom:1px solid var(--border);
+      margin-bottom:20px;
+    }
+    .sb-orb{
+      width:34px; height:34px; border-radius:50%; flex-shrink:0;
+      background:conic-gradient(#c9a96e,#82b09a,#c97a62,#c9a96e);
+      animation:orbSpin 8s linear infinite;
+      box-shadow:0 0 16px rgba(201,169,110,0.25);
+    }
+    @keyframes orbSpin{to{transform:rotate(360deg);}}
+    .sb-title{font-family:var(--font-d);font-size:1.2rem;color:var(--text);}
+    .sb-badge{
+      font-size:.55rem; font-weight:600; letter-spacing:.1em;
+      text-transform:uppercase; background:var(--gold-dim);
+      border:1px solid rgba(201,169,110,.25); color:var(--gold);
+      padding:2px 7px; border-radius:20px; margin-top:2px;
+    }
+    .sb-nav{flex:1;display:flex;flex-direction:column;gap:3px;}
+    .sb-link{
+      display:flex; align-items:center; gap:10px;
+      padding:9px 12px; border-radius:var(--r-sm);
+      font-size:.84rem; color:var(--text2);
+      transition:var(--trans); cursor:pointer;
+    }
+    .sb-link svg{width:16px;height:16px;flex-shrink:0;}
+    .sb-link:hover{background:var(--ink3);color:var(--text);}
+    .sb-link.active{background:var(--gold-dim);color:var(--gold);}
+    .sb-link.active svg{stroke:var(--gold);}
+    .sb-bottom{margin-top:auto;padding-top:20px;border-top:1px solid var(--border);}
+    .sb-user{
+      display:flex; align-items:center; gap:9px;
+      background:var(--ink3); border-radius:var(--r-sm);
+      padding:10px 11px; margin-bottom:10px;
+    }
+    .sb-avatar{
+      width:28px; height:28px; border-radius:50%;
+      background:var(--gold-dim); border:1px solid rgba(201,169,110,.3);
+      display:flex; align-items:center; justify-content:center;
+      font-size:.75rem; font-weight:600; color:var(--gold); flex-shrink:0;
+    }
+    .sb-user-name{font-size:.78rem;font-weight:500;color:var(--text);}
+    .sb-user-role{font-size:.64rem;color:var(--text3);}
+    .btn-logout{
+      width:100%; background:none; border:1px solid var(--border);
+      border-radius:var(--r-sm); color:var(--text3);
+      font-size:.75rem; padding:7px 0;
+      transition:var(--trans);
+    }
+    .btn-logout:hover{border-color:var(--terra);color:var(--terra);}
+
+    /* ── Main ────────────────────────────────────── */
+    .main{margin-left:var(--sidebar);flex:1;padding:32px 36px 80px;min-width:0;}
+
+    /* ── Page header ─────────────────────────────── */
+    .page-head{
+      display:flex; justify-content:space-between; align-items:flex-end;
+      margin-bottom:28px;
+    }
+    .page-greeting{font-size:.68rem;font-weight:600;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}
+    .page-title{font-family:var(--font-d);font-size:2.1rem;font-weight:400;}
+    .page-title em{color:var(--gold);font-style:italic;}
+    .page-meta{font-size:.75rem;color:var(--text3);text-align:right;}
+
+    /* ── Tabs ────────────────────────────────────── */
+    .tab-bar{display:flex;gap:6px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;}
+    .tab{
+      padding:9px 18px; font-size:.82rem; font-weight:500;
+      color:var(--text2); background:none; border:none;
+      border-bottom:2px solid transparent;
+      margin-bottom:-1px; transition:var(--trans);
+    }
+    .tab:hover{color:var(--text);}
+    .tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+
+    /* ── Stat cards ──────────────────────────────── */
+    .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;}
+    .stat{
+      background:var(--ink2); border:1px solid var(--border);
+      border-radius:var(--r); padding:20px 18px;
+      transition:var(--trans); position:relative; overflow:hidden;
+    }
+    .stat::before{
+      content:''; position:absolute; top:0; right:0;
+      width:60px; height:60px; border-radius:50%;
+      transform:translate(20px,-20px);
+      opacity:.15;
+    }
+    .stat.gold::before{background:var(--gold);}
+    .stat.sage::before{background:var(--sage);}
+    .stat.terra::before{background:var(--terra);}
+    .stat.blue::before{background:var(--blue);}
+    .stat:hover{border-color:var(--border2);transform:translateY(-2px);}
+    .stat-icon{font-size:1.2rem;margin-bottom:10px;}
+    .stat-value{font-family:var(--font-d);font-size:2.1rem;font-weight:600;line-height:1;margin-bottom:4px;}
+    .stat-value.gold{color:var(--gold);}
+    .stat-value.sage{color:var(--sage);}
+    .stat-value.terra{color:var(--terra);}
+    .stat-value.blue{color:var(--blue);}
+    .stat-label{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;}
+
+    /* ── Panel ───────────────────────────────────── */
+    .panel{background:var(--ink2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:20px;overflow:hidden;}
+    .panel-head{
+      display:flex; justify-content:space-between; align-items:center;
+      padding:16px 20px; border-bottom:1px solid var(--border);
+    }
+    .panel-title{font-family:var(--font-d);font-size:1rem;font-weight:400;color:var(--text2);}
+    .panel-count{font-size:.75rem;color:var(--text3);background:var(--ink3);padding:3px 10px;border-radius:20px;}
+
+    /* ── Search bar ──────────────────────────────── */
+    .search-bar{
+      display:flex; gap:10px; padding:14px 20px;
+      border-bottom:1px solid var(--border);
+    }
+    .search-input{
+      flex:1; background:var(--ink3); border:1px solid var(--border);
+      border-radius:var(--r-sm); color:var(--text);
+      font-family:var(--font-b); font-size:.85rem;
+      padding:9px 14px; outline:none; transition:border-color var(--trans);
+    }
+    .search-input:focus{border-color:rgba(201,169,110,.35);}
+    .search-input::placeholder{color:var(--text3);}
+    .filter-btn{
+      background:var(--ink3); border:1px solid var(--border);
+      border-radius:var(--r-sm); color:var(--text2);
+      font-size:.78rem; padding:9px 14px; transition:var(--trans);
+    }
+    .filter-btn:hover{border-color:var(--gold);color:var(--gold);}
+    .filter-btn.active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+
+    /* ── Table ───────────────────────────────────── */
+    .table-wrap{overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;}
+    th{
+      font-size:.65rem; font-weight:600; letter-spacing:.09em;
+      text-transform:uppercase; color:var(--text3);
+      padding:12px 16px; text-align:left;
+      border-bottom:1px solid var(--border);
+      white-space:nowrap;
+    }
+    td{
+      padding:13px 16px; font-size:.84rem; color:var(--text2);
+      border-bottom:1px solid rgba(255,255,255,0.03);
+      vertical-align:middle;
+    }
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:rgba(255,255,255,0.02);}
+    .td-name{color:var(--text);font-weight:500;}
+    .td-email{font-size:.78rem;}
+
+    /* ── User avatar ─────────────────────────────── */
+    .u-avatar{
+      width:32px; height:32px; border-radius:50%;
+      background:var(--gold-dim); border:1px solid rgba(201,169,110,.3);
+      display:inline-flex; align-items:center; justify-content:center;
+      font-weight:600; font-size:.85rem; color:var(--gold);
+      margin-right:10px; flex-shrink:0;
+    }
+    .u-cell{display:flex;align-items:center;}
+
+    /* ── Badges ──────────────────────────────────── */
+    .badge{
+      display:inline-block; padding:3px 10px;
+      border-radius:20px; font-size:.68rem; font-weight:600;
+      letter-spacing:.06em; text-transform:uppercase;
+    }
+    .badge-Positive{background:var(--sage-dim);color:var(--sage);border:1px solid rgba(130,176,154,.25);}
+    .badge-Neutral {background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,169,110,.25);}
+    .badge-Negative{background:var(--terra-dim);color:var(--terra);border:1px solid rgba(201,122,98,.25);}
+
+    /* ── Action buttons ──────────────────────────── */
+    .btn-view{
+      background:var(--gold-dim); border:1px solid rgba(201,169,110,.25);
+      border-radius:6px; color:var(--gold);
+      font-size:.72rem; font-weight:500;
+      padding:5px 13px; transition:var(--trans);
+    }
+    .btn-view:hover{background:rgba(201,169,110,.22);}
+
+    /* ── Entry detail modal ──────────────────────── */
+    .modal-bd{
+      display:none; position:fixed; inset:0;
+      background:rgba(8,11,14,.8); backdrop-filter:blur(8px);
+      z-index:500; align-items:center; justify-content:center; padding:20px;
+    }
+    .modal-bd.open{display:flex;}
+    .modal{
+      background:var(--ink2); border:1px solid var(--border2);
+      border-radius:var(--r); width:100%; max-width:680px;
+      max-height:85vh; overflow-y:auto;
+      box-shadow:0 30px 80px rgba(0,0,0,.6);
+      animation:modalIn .3s cubic-bezier(0.34,1.3,0.64,1);
+    }
+    @keyframes modalIn{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
+    .modal-head{
+      display:flex; justify-content:space-between; align-items:center;
+      padding:20px 24px; border-bottom:1px solid var(--border);
+      position:sticky; top:0; background:var(--ink2); z-index:1;
+    }
+    .modal-title{font-family:var(--font-d);font-size:1.3rem;font-weight:400;}
+    .modal-close{
+      background:none; border:none; color:var(--text3);
+      font-size:1.2rem; padding:4px 8px; transition:var(--trans);
+    }
+    .modal-close:hover{color:var(--text);}
+    .modal-user-info{
+      display:flex; gap:16px; align-items:center;
+      padding:18px 24px; border-bottom:1px solid var(--border);
+      background:var(--ink3);
+    }
+    .modal-user-avatar{
+      width:48px; height:48px; border-radius:50%;
+      background:var(--gold-dim); border:2px solid rgba(201,169,110,.3);
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.2rem; font-weight:600; color:var(--gold); flex-shrink:0;
+    }
+    .modal-user-name{font-size:1.05rem;font-weight:500;color:var(--text);margin-bottom:3px;}
+    .modal-user-meta{font-size:.76rem;color:var(--text3);}
+    .modal-stats{
+      display:grid; grid-template-columns:repeat(3,1fr);
+      gap:1px; background:var(--border);
+      border-bottom:1px solid var(--border);
+    }
+    .modal-stat{
+      background:var(--ink2); padding:16px 18px; text-align:center;
+    }
+    .modal-stat-val{font-family:var(--font-d);font-size:1.6rem;font-weight:600;line-height:1;margin-bottom:3px;}
+    .modal-stat-lbl{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;}
+    .entries-list{padding:16px 24px;display:flex;flex-direction:column;gap:12px;}
+    .e-card{
+      background:var(--ink3); border:1px solid var(--border);
+      border-radius:var(--r-sm); padding:14px 16px;
+    }
+    .e-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+    .e-card-date{font-size:.72rem;color:var(--text3);}
+    .e-card-text{font-size:.86rem;line-height:1.6;color:var(--text2);margin-bottom:10px;}
+    .e-card-tags{display:flex;flex-wrap:wrap;gap:6px;}
+    .e-tag{background:var(--ink4);border-radius:12px;padding:3px 9px;font-size:.7rem;color:var(--text3);}
+    .e-response{
+      margin-top:10px; padding-top:10px;
+      border-top:1px solid var(--border);
+      font-size:.8rem; color:var(--text2);
+      font-style:italic; line-height:1.6;
+    }
+
+    /* ── Chart section ───────────────────────────── */
+    .chart-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:20px;}
+    .chart-card{
+      background:var(--ink2); border:1px solid var(--border);
+      border-radius:var(--r); padding:20px 22px;
+    }
+    .chart-card h3{
+      font-family:var(--font-d); font-size:.9rem;
+      font-weight:400; color:var(--text2); margin-bottom:16px;
+    }
+
+    /* ── Empty state ─────────────────────────────── */
+    .empty{text-align:center;padding:50px 0;color:var(--text3);}
+    .empty-icon{font-size:2rem;margin-bottom:10px;}
+    .empty p{font-size:.85rem;font-style:italic;}
+
+    /* ── Loading ─────────────────────────────────── */
+    .loading{text-align:center;padding:30px;color:var(--text3);font-style:italic;font-size:.85rem;}
+
+    /* ── Pages ───────────────────────────────────── */
+    .admin-page{display:none;}
+    .admin-page.active{display:block;animation:fadeUp .3s ease;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+    /* ── Responsive ──────────────────────────────── */
+    @media(max-width:900px){
+      .stats-grid{grid-template-columns:repeat(2,1fr);}
+      .chart-grid{grid-template-columns:1fr;}
+    }
+    @media(max-width:600px){
+      .sidebar{display:none;}
+      .main{margin-left:0;padding:20px 16px;}
+      .stats-grid{grid-template-columns:1fr 1fr;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-orb"></div>
+    <div>
+      <div class="sb-title">MindGuard</div>
+      <div class="sb-badge">Admin</div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-link active" onclick="showPage('overview')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Overview
+    </div>
+    <div class="sb-link" onclick="showPage('users')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      All Users
+    </div>
+    <div class="sb-link" onclick="showPage('entries')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      All Entries
+    </div>
+    <div class="sb-link" onclick="showPage('analytics')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Analytics
+    </div>
+  </nav>
+
+  <div class="sb-bottom">
+    <div class="sb-user">
+      <div class="sb-avatar">A</div>
+      <div>
+        <div class="sb-user-name">Administrator</div>
+        <div class="sb-user-role">Full access</div>
+      </div>
+    </div>
+    <a href="/admin/logout"><button class="btn-logout">Sign Out</button></a>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main">
+
+  <!-- ─── OVERVIEW ─── -->
+  <div class="admin-page active" id="page-overview">
+    <div class="page-head">
+      <div>
+        <div class="page-greeting">Platform Overview</div>
+        <h1 class="page-title">Admin <em>Dashboard</em></h1>
+      </div>
+      <div class="page-meta" id="overviewMeta"></div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+      <div class="loading">Loading stats…</div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>Mood Distribution — All Users</h3>
+        <canvas id="moodDistChart" height="180"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Sentiment Split</h3>
+        <canvas id="sentSplitChart" height="180"></canvas>
+      </div>
+    </div>
+
+    <!-- Recent signups -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Recent Registrations</div>
+        <span class="panel-count" id="recentCount">—</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Joined</th>
+              <th>Entries</th>
+              <th>Last Active</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="recentUsersBody">
+            <tr><td colspan="6" class="loading">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ALL USERS ─── -->
+  <div class="admin-page" id="page-users">
+    <div class="page-head">
+      <div>
+        <div class="page-greeting">User Management</div>
+        <h1 class="page-title">All <em>Users</em></h1>
+      </div>
+      <div class="page-meta" id="usersMeta"></div>
+    </div>
+
+    <div class="panel">
+      <div class="search-bar">
+        <input class="search-input" id="userSearch" placeholder="Search by name or email…" oninput="filterUsers()"/>
+        <button class="filter-btn active" id="filterAll" onclick="setUserFilter('all',this)">All</button>
+        <button class="filter-btn" id="filterActive" onclick="setUserFilter('active',this)">Active</button>
+        <button class="filter-btn" id="filterInactive" onclick="setUserFilter('inactive',this)">No Entries</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Joined</th>
+              <th>Entries</th>
+              <th>Positive</th>
+              <th>Negative</th>
+              <th>Last Entry</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody">
+            <tr><td colspan="8" class="loading">Loading users…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ALL ENTRIES ─── -->
+  <div class="admin-page" id="page-entries">
+    <div class="page-head">
+      <div>
+        <div class="page-greeting">Content Management</div>
+        <h1 class="page-title">All <em>Entries</em></h1>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="search-bar">
+        <input class="search-input" id="entrySearch" placeholder="Search entries by text, emotion, mood…" oninput="filterEntries()"/>
+        <button class="filter-btn active" id="efAll"  onclick="setEntryFilter('all',this)">All</button>
+        <button class="filter-btn" id="efPos"  onclick="setEntryFilter('Positive',this)">Positive</button>
+        <button class="filter-btn" id="efNeu"  onclick="setEntryFilter('Neutral',this)">Neutral</button>
+        <button class="filter-btn" id="efNeg"  onclick="setEntryFilter('Negative',this)">Negative</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>User</th>
+              <th>Sentiment</th>
+              <th>Score</th>
+              <th>Emotions</th>
+              <th>Entry Preview</th>
+            </tr>
+          </thead>
+          <tbody id="entriesBody">
+            <tr><td colspan="7" class="loading">Loading entries…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ANALYTICS ─── -->
+  <div class="admin-page" id="page-analytics">
+    <div class="page-head">
+      <div>
+        <div class="page-greeting">Data Insights</div>
+        <h1 class="page-title">Platform <em>Analytics</em></h1>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="analyticsStats">
+      <div class="loading">Loading…</div>
+    </div>
+
+    <div class="chart-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="chart-card"><h3>Top Emotions — All Users</h3><canvas id="emotionBarChart" height="220"></canvas></div>
+      <div class="chart-card"><h3>Overall Sentiment Split</h3><canvas id="sentDonutChart" height="220"></canvas></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ═══ USER ENTRIES MODAL ═══ -->
+<div class="modal-bd" id="userModal" onclick="closeModal(event)">
+  <div class="modal" id="modalBox">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">User Entries</div>
+      <button class="modal-close" onclick="closeUserModal()">✕</button>
+    </div>
+    <div class="modal-user-info" id="modalUserInfo"></div>
+    <div class="modal-stats" id="modalStats"></div>
+    <div class="entries-list" id="modalEntries">
+      <div class="loading">Loading entries…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────────
+let allUsers   = [];
+let allEntries = [];
+let chartObjs  = {};
+let userFilter  = 'all';
+let entryFilter = 'all';
+
+Chart.defaults.color       = '#5a5550';
+Chart.defaults.font.family = "'Outfit', sans-serif";
+Chart.defaults.font.size   = 11;
+
+// ─────────────────────────────────────────────────────────────
+//  NAVIGATION
+// ─────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  if (name === 'overview')  initOverview();
+  if (name === 'users')     initUsers();
+  if (name === 'entries')   initEntries();
+  if (name === 'analytics') initAnalytics();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  OVERVIEW
+// ─────────────────────────────────────────────────────────────
+async function initOverview() {
+  document.getElementById('overviewMeta').textContent =
+    new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  const [stats, users, entries] = await Promise.all([
+    fetch('/api/admin/stats').then(r=>r.json()),
+    fetchUsers(),
+    fetchEntries(),
+  ]);
+
+  renderOverviewStats(stats);
+  renderRecentUsers(users.slice(0,6));
+  renderOverviewCharts(entries);
+}
+
+function renderOverviewStats(s) {
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat gold">
+      <div class="stat-icon">👥</div>
+      <div class="stat-value gold">${s.total_users}</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+    <div class="stat sage">
+      <div class="stat-icon">📝</div>
+      <div class="stat-value sage">${s.total_entries}</div>
+      <div class="stat-label">Total Entries</div>
+    </div>
+    <div class="stat blue">
+      <div class="stat-icon">🌅</div>
+      <div class="stat-value blue">${s.entries_today}</div>
+      <div class="stat-label">Entries Today</div>
+    </div>
+    <div class="stat terra">
+      <div class="stat-icon">✨</div>
+      <div class="stat-value terra">${s.new_users_today}</div>
+      <div class="stat-label">New Users Today</div>
+    </div>
+    <div class="stat sage">
+      <div class="stat-icon">😊</div>
+      <div class="stat-value sage">${s.positive}</div>
+      <div class="stat-label">Positive Entries</div>
+    </div>
+    <div class="stat terra">
+      <div class="stat-icon">😔</div>
+      <div class="stat-value terra">${s.negative}</div>
+      <div class="stat-label">Negative Entries</div>
+    </div>
+  `;
+}
+
+function renderRecentUsers(users) {
+  document.getElementById('recentCount').textContent = `${users.length} shown`;
+  document.getElementById('recentUsersBody').innerHTML = users.length ? users.map(u => `
+    <tr>
+      <td><div class="u-cell"><span class="u-avatar">${u.name.charAt(0).toUpperCase()}</span><span class="td-name">${esc(u.name)}</span></div></td>
+      <td class="td-email">${esc(u.email)}</td>
+      <td>${fmtDate(u.created_at)}</td>
+      <td><strong>${u.entry_count||0}</strong></td>
+      <td>${u.last_entry ? fmtDate(u.last_entry) : '<span style="color:var(--text3)">Never</span>'}</td>
+      <td><button class="btn-view" onclick="openUserModal(${u.id},'${esc(u.name)}','${esc(u.email)}',${u.entry_count||0})">View →</button></td>
+    </tr>
+  `).join('') : '<tr><td colspan="6" class="loading">No users yet.</td></tr>';
+}
+
+function renderOverviewCharts(entries) {
+  const pos = entries.filter(e=>e.sentiment==='Positive').length;
+  const neu = entries.filter(e=>e.sentiment==='Neutral').length;
+  const neg = entries.filter(e=>e.sentiment==='Negative').length;
+
+  if (chartObjs.moodDist) chartObjs.moodDist.destroy();
+  chartObjs.moodDist = new Chart(document.getElementById('moodDistChart').getContext('2d'),{
+    type:'bar',
+    data:{ labels:['Positive','Neutral','Negative'], datasets:[{ data:[pos,neu,neg], backgroundColor:['rgba(130,176,154,.75)','rgba(201,169,110,.75)','rgba(201,122,98,.75)'], borderRadius:6, borderWidth:0 }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{grid:{color:'rgba(255,255,255,.04)'}}, x:{grid:{display:false}} }}
+  });
+
+  if (chartObjs.sentSplit) chartObjs.sentSplit.destroy();
+  chartObjs.sentSplit = new Chart(document.getElementById('sentSplitChart').getContext('2d'),{
+    type:'doughnut',
+    data:{ labels:['Positive','Neutral','Negative'], datasets:[{ data:[pos,neu,neg], backgroundColor:['rgba(130,176,154,.8)','rgba(201,169,110,.8)','rgba(201,122,98,.8)'], borderWidth:0, hoverOffset:6 }] },
+    options:{ responsive:true, cutout:'60%', plugins:{legend:{display:true,position:'bottom',labels:{padding:12,boxWidth:9}}}}
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  USERS
+// ─────────────────────────────────────────────────────────────
+async function initUsers() {
+  if (!allUsers.length) allUsers = await fetchUsers();
+  document.getElementById('usersMeta').textContent = `${allUsers.length} registered users`;
+  renderUsersTable(allUsers);
+}
+
+function renderUsersTable(users) {
+  let filtered = users.filter(u => {
+    if (userFilter === 'active')   return (u.entry_count||0) > 0;
+    if (userFilter === 'inactive') return (u.entry_count||0) === 0;
+    return true;
+  });
+  const q = document.getElementById('userSearch')?.value?.toLowerCase() || '';
+  if (q) filtered = filtered.filter(u => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+
+  document.getElementById('usersBody').innerHTML = filtered.length ? filtered.map(u => `
+    <tr>
+      <td><div class="u-cell"><span class="u-avatar">${u.name.charAt(0).toUpperCase()}</span><span class="td-name">${esc(u.name)}</span></div></td>
+      <td class="td-email">${esc(u.email)}</td>
+      <td>${fmtDate(u.created_at)}</td>
+      <td><strong style="color:var(--gold)">${u.entry_count||0}</strong></td>
+      <td style="color:var(--sage)">${u.pos_count||0}</td>
+      <td style="color:var(--terra)">${u.neg_count||0}</td>
+      <td>${u.last_entry ? fmtDate(u.last_entry) : '<span style="color:var(--text3)">—</span>'}</td>
+      <td><button class="btn-view" onclick="openUserModal(${u.id},'${esc(u.name)}','${esc(u.email)}',${u.entry_count||0})">View Entries →</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="8"><div class="empty"><div class="empty-icon">👤</div><p>No users match this filter.</p></div></td></tr>`;
+}
+
+function filterUsers() { renderUsersTable(allUsers); }
+function setUserFilter(f,btn) {
+  userFilter = f;
+  document.querySelectorAll('#page-users .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderUsersTable(allUsers);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ENTRIES
+// ─────────────────────────────────────────────────────────────
+async function initEntries() {
+  if (!allEntries.length) allEntries = await fetchEntries();
+  renderEntriesTable(allEntries);
+}
+
+function renderEntriesTable(entries) {
+  let filtered = entries.filter(e => entryFilter === 'all' || e.sentiment === entryFilter);
+  const q = document.getElementById('entrySearch')?.value?.toLowerCase() || '';
+  if (q) filtered = filtered.filter(e =>
+    e.text.toLowerCase().includes(q) ||
+    e.emotions.toLowerCase().includes(q) ||
+    e.sentiment.toLowerCase().includes(q)
+  );
+
+  document.getElementById('entriesBody').innerHTML = filtered.length ? filtered.map((e,i) => `
+    <tr>
+      <td style="color:var(--text3)">${i+1}</td>
+      <td style="white-space:nowrap">${fmtDate(e.created_at)}</td>
+      <td style="color:var(--text3);font-size:.76rem">${e.user_id ? `User #${e.user_id}` : '<em>Guest</em>'}</td>
+      <td><span class="badge badge-${e.sentiment}">${e.sentiment}</span></td>
+      <td style="color:${e.score>=.05?'var(--sage)':e.score<=-.05?'var(--terra)':'var(--gold)'};font-weight:500">${e.score>0?'+':''}${e.score}</td>
+      <td style="font-size:.75rem;color:var(--text3)">${esc(e.emotions)}</td>
+      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(e.text)}">${esc(e.text.slice(0,80))}${e.text.length>80?'…':''}</td>
+    </tr>
+  `).join('') : `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📄</div><p>No entries match this filter.</p></div></td></tr>`;
+}
+
+function filterEntries() { renderEntriesTable(allEntries); }
+function setEntryFilter(f,btn) {
+  entryFilter = f;
+  document.querySelectorAll('#page-entries .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderEntriesTable(allEntries);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ANALYTICS
+// ─────────────────────────────────────────────────────────────
+async function initAnalytics() {
+  const [stats, entries] = await Promise.all([
+    fetch('/api/admin/stats').then(r=>r.json()),
+    fetchEntries(),
+  ]);
+
+  document.getElementById('analyticsStats').innerHTML = `
+    <div class="stat gold"><div class="stat-icon">📊</div><div class="stat-value gold">${stats.total_entries}</div><div class="stat-label">Total Entries</div></div>
+    <div class="stat sage"><div class="stat-icon">💚</div><div class="stat-value sage">${Math.round(stats.positive/Math.max(stats.total_entries,1)*100)}%</div><div class="stat-label">Positive Rate</div></div>
+    <div class="stat terra"><div class="stat-icon">💔</div><div class="stat-value terra">${Math.round(stats.negative/Math.max(stats.total_entries,1)*100)}%</div><div class="stat-label">Negative Rate</div></div>
+  `;
+
+  // Emotion frequency
+  const emotionCounts = {};
+  entries.forEach(e => e.emotions.split(', ').forEach(em => {
+    em = em.trim();
+    if (em) emotionCounts[em] = (emotionCounts[em]||0)+1;
+  }));
+  const sorted = Object.entries(emotionCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  if (chartObjs.emotionBar) chartObjs.emotionBar.destroy();
+  chartObjs.emotionBar = new Chart(document.getElementById('emotionBarChart').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels: sorted.map(e=>e[0]),
+      datasets:[{ data:sorted.map(e=>e[1]), backgroundColor:'rgba(201,169,110,.7)', borderRadius:5, borderWidth:0 }]
+    },
+    options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ x:{grid:{color:'rgba(255,255,255,.04)'}}, y:{grid:{display:false}} } }
+  });
+
+  const pos = entries.filter(e=>e.sentiment==='Positive').length;
+  const neu = entries.filter(e=>e.sentiment==='Neutral').length;
+  const neg = entries.filter(e=>e.sentiment==='Negative').length;
+
+  if (chartObjs.sentDonut) chartObjs.sentDonut.destroy();
+  chartObjs.sentDonut = new Chart(document.getElementById('sentDonutChart').getContext('2d'),{
+    type:'doughnut',
+    data:{ labels:['Positive','Neutral','Negative'], datasets:[{ data:[pos,neu,neg], backgroundColor:['rgba(130,176,154,.8)','rgba(201,169,110,.8)','rgba(201,122,98,.8)'], borderWidth:0, hoverOffset:8 }] },
+    options:{ responsive:true, cutout:'55%', plugins:{legend:{display:true,position:'bottom',labels:{padding:14,boxWidth:10}}} }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  USER MODAL
+// ─────────────────────────────────────────────────────────────
+async function openUserModal(uid, name, email, entryCount) {
+  document.getElementById('userModal').classList.add('open');
+  document.getElementById('modalTitle').textContent = `${name}'s Journal`;
+
+  document.getElementById('modalUserInfo').innerHTML = `
+    <div class="modal-user-avatar">${name.charAt(0).toUpperCase()}</div>
+    <div>
+      <div class="modal-user-name">${esc(name)}</div>
+      <div class="modal-user-meta">${esc(email)} · ${entryCount} entries total</div>
+    </div>
+  `;
+
+  document.getElementById('modalEntries').innerHTML = '<div class="loading">Loading entries…</div>';
+
+  const entries = await fetch(`/api/admin/user/${uid}/entries`).then(r=>r.json());
+
+  const pos = entries.filter(e=>e.sentiment==='Positive').length;
+  const neg = entries.filter(e=>e.sentiment==='Negative').length;
+  const avg = entries.length ? (entries.reduce((s,e)=>s+e.score,0)/entries.length).toFixed(2) : 0;
+
+  document.getElementById('modalStats').innerHTML = `
+    <div class="modal-stat"><div class="modal-stat-val" style="color:var(--gold)">${entries.length}</div><div class="modal-stat-lbl">Entries</div></div>
+    <div class="modal-stat"><div class="modal-stat-val" style="color:var(--sage)">${pos}</div><div class="modal-stat-lbl">Positive</div></div>
+    <div class="modal-stat"><div class="modal-stat-val" style="color:${avg>=0?'var(--sage)':'var(--terra)'}">${avg>0?'+':''}${avg}</div><div class="modal-stat-lbl">Avg Score</div></div>
+  `;
+
+  document.getElementById('modalEntries').innerHTML = entries.length ? entries.map(e=>`
+    <div class="e-card">
+      <div class="e-card-top">
+        <span class="badge badge-${e.sentiment}">${e.sentiment}</span>
+        <span class="e-card-date">${fmtDate(e.created_at)}</span>
+      </div>
+      <p class="e-card-text">${esc(e.text)}</p>
+      <div class="e-card-tags">
+        ${e.emotions.split(', ').map(em=>`<span class="e-tag">${em.trim()}</span>`).join('')}
+      </div>
+      <div class="e-response">💬 "${esc(e.response)}"</div>
+    </div>
+  `).join('') : '<div class="empty"><div class="empty-icon">📖</div><p>No entries yet from this user.</p></div>';
+}
+
+function closeModal(event) {
+  if (event && event.target !== document.getElementById('userModal')) return;
+  closeUserModal();
+}
+function closeUserModal() {
+  document.getElementById('userModal').classList.remove('open');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  DATA FETCHERS
+// ─────────────────────────────────────────────────────────────
+async function fetchUsers() {
+  allUsers = await fetch('/api/admin/users').then(r=>r.json());
+  return allUsers;
+}
+async function fetchEntries() {
+  allEntries = await fetch('/api/admin/entries/all').then(r=>r.json());
+  return allEntries;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  HELPERS
+// ─────────────────────────────────────────────────────────────
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', initOverview);
+</script>
+</body>
+</html>

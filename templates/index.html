@@ -10,33 +10,31 @@
 </head>
 <body>
 
-<!-- ═══ MOOD ANIMATION CANVAS (full-screen, behind everything) ═══ -->
+<!-- Full-screen mood animation canvas -->
 <canvas id="moodCanvas"></canvas>
 
-<!-- ═══ MOBILE HAMBURGER ═══ -->
+<!-- Mobile hamburger -->
 <button class="hamburger" id="hamburger" onclick="toggleSidebar()">
   <span></span><span></span><span></span>
 </button>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-<!-- ════════════════════════════════════════
-     REGISTRATION NUDGE BANNER
-════════════════════════════════════════ -->
+<!-- Registration nudge banner -->
 <div class="nudge-banner" id="nudgeBanner" style="display:none">
   <div class="nudge-content">
     <span class="nudge-icon">✨</span>
     <div class="nudge-text">
       <strong>Save your journey.</strong>
-      Register free to keep your entries, track streaks & get weekly insights by email.
+      Register free to keep your entries, track streaks and get weekly insights by email.
     </div>
     <button class="nudge-btn" onclick="openModal('register')">Join Free</button>
     <button class="nudge-close" onclick="dismissNudge()">✕</button>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
+<!-- ══════════════════════════════════════
      SIDEBAR
-════════════════════════════════════════ -->
+══════════════════════════════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <div class="brand-orb-spin"></div>
@@ -46,7 +44,7 @@
     </div>
   </div>
 
-  <!-- User pill -->
+  <!-- Logged-in user pill -->
   <div class="user-pill" id="userPill" style="display:none">
     <div class="user-avatar" id="userAvatar">?</div>
     <div class="user-info">
@@ -56,6 +54,7 @@
     <button class="logout-btn" onclick="doLogout()" title="Sign out">↩</button>
   </div>
 
+  <!-- Auth buttons (shown when logged out) -->
   <div class="auth-btns" id="authBtns">
     <button class="btn-auth-outline" onclick="openModal('login')">Sign In</button>
     <button class="btn-auth-fill"    onclick="openModal('register')">Register</button>
@@ -88,12 +87,12 @@
   </div>
 </aside>
 
-<!-- ════════════════════════════════════════
-     MAIN
-════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════ -->
 <main class="main">
 
-  <!-- ─── JOURNAL ─────────────────────── -->
+  <!-- ─── JOURNAL ──────────────────────── -->
   <section id="section-journal" class="page active">
     <header class="page-header">
       <div class="header-text">
@@ -103,7 +102,7 @@
       <div class="header-date" id="headerDate"></div>
     </header>
 
-    <!-- Mood orb -->
+    <!-- Animated mood orb -->
     <div class="orb-container">
       <div class="orb" id="moodOrb">
         <div class="orb-inner">
@@ -118,7 +117,7 @@
       </div>
     </div>
 
-    <!-- Journal card -->
+    <!-- Journal input card -->
     <div class="card journal-card">
       <div class="card-top">
         <label class="card-label">Today's Entry</label>
@@ -127,17 +126,19 @@
 
       <div class="textarea-wrap">
         <textarea id="journalInput" class="journal-textarea"
-          placeholder="Start writing… What's on your mind? How did today feel?"
+          placeholder="Start writing… What's on your mind? How did today feel? Press Enter to analyse, Shift+Enter for new line."
           rows="7"></textarea>
+        <!-- Mic button inside textarea -->
         <button class="mic-btn" id="micBtn" onclick="toggleVoice()" title="Speak your entry">
-          <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
           </svg>
-          <span class="mic-pulse" id="micPulse"></span>
+          <span class="mic-pulse"></span>
         </button>
       </div>
 
+      <!-- Voice status bar -->
       <div class="voice-status" id="voiceStatus" style="display:none">
         <div class="voice-wave">
           <span></span><span></span><span></span><span></span><span></span>
@@ -146,6 +147,7 @@
         <button class="voice-stop-btn" onclick="stopVoice()">Stop</button>
       </div>
 
+      <!-- Emoji quick mood selector -->
       <div class="emoji-strip">
         <span class="emoji-strip-label">Quick mood:</span>
         <button class="emj" data-mood="1">😞</button>
@@ -157,25 +159,50 @@
 
       <button class="analyse-btn" onclick="submitEntry()">
         <span>Analyse My Entry</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
       </button>
+      <p class="enter-hint">Press <kbd>Enter</kbd> to analyse · <kbd>Shift+Enter</kbd> for new line · <kbd>🎙️</kbd> to speak</p>
     </div>
 
-    <!-- Result card -->
+    <!-- ─── RESULT CARD ─── -->
     <div class="result-card" id="resultCard" style="display:none">
+
+      <!-- Sentiment + score row -->
       <div class="result-top">
         <div class="sentiment-pill" id="sentimentPill"></div>
         <div class="score-track"><div class="score-bar" id="scoreBar"></div></div>
         <span class="score-value" id="scoreValue"></span>
       </div>
+
+      <!-- Emotion tags -->
       <div class="emotions-wrap" id="emotionsWrap"></div>
-      <blockquote class="response-quote" id="responseQuote"></blockquote>
+
+      <!-- AI Response with Read Aloud button -->
+      <div class="response-block">
+        <div class="response-header">
+          <span class="response-label">MindGuard says</span>
+          <button class="speak-btn" id="speakBtn" onclick="toggleSpeak()" title="Read response aloud">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
+            Read Aloud
+          </button>
+        </div>
+        <blockquote class="response-quote" id="responseQuote"></blockquote>
+      </div>
+
+      <!-- Coping tip -->
       <div class="tip-block" id="tipBlock"></div>
-      <p class="result-disclaimer">⚕️ MindGuard is a personal wellness companion, not a clinical tool. If you're struggling, please reach out to a licensed mental health professional.</p>
+
+      <!-- Disclaimer -->
+      <p class="result-disclaimer">⚕️ MindGuard is a personal wellness companion, not a clinical tool. If you are struggling, please reach out to a licensed mental health professional.</p>
     </div>
   </section>
 
-  <!-- ─── DASHBOARD ───────────────────── -->
+  <!-- ─── DASHBOARD ────────────────────── -->
   <section id="section-dashboard" class="page">
     <header class="page-header">
       <div class="header-text">
@@ -197,7 +224,7 @@
 
     <div class="alert-card" id="alertCard" style="display:none">
       <div class="alert-icon">⚠️</div>
-      <div><strong>Heads up.</strong> Your mood has been trending lower the last few days. That's okay — but you deserve support. You don't have to carry this alone.</div>
+      <div><strong>Heads up.</strong> Your mood has been trending lower the last few days. That is okay — but you deserve support. You do not have to carry this alone.</div>
     </div>
 
     <div class="charts-layout">
@@ -233,7 +260,7 @@
     <div class="history-toolbar">
       <div class="search-wrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input id="searchBox" class="search-input" placeholder="Search entries, emotions…" oninput="filterHistory()"/>
+        <input id="searchBox" class="search-input" placeholder="Search entries, emotions, moods…" oninput="filterHistory()"/>
       </div>
       <button class="export-btn" onclick="exportCSV()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -244,21 +271,19 @@
       <div class="empty-state"><div class="empty-icon">📖</div><p>Loading entries…</p></div>
     </div>
   </section>
+
 </main>
 
-<!-- ════════════════════════════════════════
+<!-- ══════════════════════════════════════
      REGISTER MODAL
-════════════════════════════════════════ -->
+══════════════════════════════════════ -->
 <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal()"></div>
 
 <div class="modal" id="registerModal">
   <button class="modal-close" onclick="closeModal()">✕</button>
-  <div class="modal-logo">
-    <div class="modal-orb"></div>
-    <span>MindGuard</span>
-  </div>
+  <div class="modal-logo"><div class="modal-orb"></div><span>MindGuard</span></div>
   <h2 class="modal-title">Save your journey</h2>
-  <p class="modal-sub">Register free to keep your entries, unlock streak tracking, and receive weekly mood insights by email.</p>
+  <p class="modal-sub">Register free to keep your entries, unlock streak tracking and receive weekly mood insights by email.</p>
   <div class="form-group">
     <label>Your Name</label>
     <input type="text" id="regName" placeholder="e.g. Sarah" class="form-input"/>
@@ -276,15 +301,12 @@
   <p class="modal-switch">Already have an account? <a href="#" onclick="openModal('login')">Sign in</a></p>
 </div>
 
-<!-- ════════════════════════════════════════
+<!-- ══════════════════════════════════════
      LOGIN MODAL
-════════════════════════════════════════ -->
+══════════════════════════════════════ -->
 <div class="modal" id="loginModal">
   <button class="modal-close" onclick="closeModal()">✕</button>
-  <div class="modal-logo">
-    <div class="modal-orb"></div>
-    <span>MindGuard</span>
-  </div>
+  <div class="modal-logo"><div class="modal-orb"></div><span>MindGuard</span></div>
   <h2 class="modal-title">Welcome back</h2>
   <p class="modal-sub">Sign in to access your journal history and continue your streak.</p>
   <div class="form-group">

@@ -174,3 +174,55 @@ def mark_email_sent(uid):
               (datetime.now().strftime("%Y-%m-%d"), uid))
     conn.commit()
     conn.close()
+
+def get_all_users():
+    """Return all registered users with their entry counts and last entry date."""
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("""
+        SELECT u.id, u.name, u.email, u.created_at, u.entry_count, u.last_email,
+               MAX(e.created_at) as last_entry,
+               SUM(CASE WHEN e.sentiment='Positive' THEN 1 ELSE 0 END) as pos_count,
+               SUM(CASE WHEN e.sentiment='Negative' THEN 1 ELSE 0 END) as neg_count,
+               SUM(CASE WHEN e.sentiment='Neutral'  THEN 1 ELSE 0 END) as neu_count
+        FROM users u
+        LEFT JOIN entries e ON e.user_id = u.id
+        GROUP BY u.id
+        ORDER BY u.created_at DESC
+    """)
+    rows = c.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_user_stats():
+    """Platform-wide stats for admin dashboard."""
+    conn = get_connection()
+    c = conn.cursor()
+
+    c.execute("SELECT COUNT(*) as total FROM users")
+    total_users = c.fetchone()["total"]
+
+    c.execute("SELECT COUNT(*) as total FROM entries")
+    total_entries = c.fetchone()["total"]
+
+    c.execute("SELECT COUNT(*) as total FROM entries WHERE sentiment='Positive'")
+    pos = c.fetchone()["total"]
+
+    c.execute("SELECT COUNT(*) as total FROM entries WHERE sentiment='Negative'")
+    neg = c.fetchone()["total"]
+
+    c.execute("SELECT COUNT(*) as total FROM entries WHERE DATE(created_at)=DATE('now')")
+    today = c.fetchone()["total"]
+
+    c.execute("SELECT COUNT(*) as total FROM users WHERE DATE(created_at)=DATE('now')")
+    new_today = c.fetchone()["total"]
+
+    conn.close()
+    return {
+        "total_users":    total_users,
+        "total_entries":  total_entries,
+        "positive":       pos,
+        "negative":       neg,
+        "entries_today":  today,
+        "new_users_today": new_today,
+    }
