@@ -1,4 +1,5 @@
-from flask      import Flask, request, jsonify, render_template, session, redirect, url_for, abort
+import os
+from flask      import Flask, request, jsonify, render_template, session, redirect, url_for
 from flask_cors import CORS
 
 from database    import (init_db, save_entry, get_all_entries,
@@ -9,13 +10,16 @@ from analyzer    import analyze
 from ai_response import generate_response
 
 app = Flask(__name__)
-app.secret_key = "mindguard_secret_2026"
+
+# ── Secret key: set MINDGUARD_SECRET in Railway env vars ───
+app.secret_key = os.environ.get("MINDGUARD_SECRET", "mindguard_dev_secret_change_in_production")
+
 CORS(app)
 init_db()
 
-# ── Admin credentials (change before production) ───────────
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "mindguard2026"
+# ── Admin credentials: set in Railway env vars ─────────────
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "mindguard2026")
 
 # ─────────────────────────────────────────────────────────────
 # HELPERS
@@ -142,7 +146,6 @@ def admin_logout():
     session.pop("is_admin", None)
     return redirect(url_for("admin_login"))
 
-# ── Admin API ─────────────────────────────────────────────
 @app.route("/api/admin/users")
 def api_admin_users():
     if not is_admin(): return jsonify({"error":"Unauthorized"}), 403
@@ -161,9 +164,13 @@ def api_admin_stats():
 @app.route("/api/admin/entries/all")
 def api_admin_all_entries():
     if not is_admin(): return jsonify({"error":"Unauthorized"}), 403
-    return jsonify(get_all_entries())   # no user_id = all entries
+    return jsonify(get_all_entries())
 
+# ─────────────────────────────────────────────────────────────
+# ENTRY POINT
+# ─────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    print("🧠 MindGuard → http://127.0.0.1:5000")
-    print("🔐 Admin Panel → http://127.0.0.1:5000/admin")
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    print(f"🧠 MindGuard → http://127.0.0.1:{port}")
+    print(f"🔐 Admin Panel → http://127.0.0.1:{port}/admin")
+    app.run(host="0.0.0.0", port=port, debug=False)
